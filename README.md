@@ -20,7 +20,7 @@ $ cd biochat
 ```
 
 #### Setting up a Virtual Environment with Conda
-Because of the size of the dependencies, it is highly reccomended that a virtual environment is set up for this project. Navigate to this project directory and use these commands to setup a venv with conda:
+Because of the size of the dependencies, it is highly reccomended that a virtual environment is set up for this project. Navigate to this project directory and use these commands to setup a venv with Conda:
 ```bash
 conda create --name biochat
 conda activate biochat
@@ -34,6 +34,10 @@ If issues persist, try installing with Pip:
 ```bash 
 conda install pip
 pip install -r requirements.txt
+```
+On Windows systems, Chromadb may have additional requirements for installation. Follow [this guide](https://github.com/bycloudai/InstallVSBuildToolsWindows) if you get the following error:
+```
+ error: Microsoft Visual C++ 14.0 or greater is required. Get it with "Microsoft C++ Build Tools": https://visualstudio.microsoft.com/visual-cpp-build-tools/
 ```
 
 ## Usage <a name="usage"></a>
