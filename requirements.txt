@@ -2,6 +2,7 @@ streamlit==1.1.0
 streamlit_chat==0.0.2.2
 torch
 transformers==4.29.2
+sentence_transformers
 sacremoses
 chromadb
 pytrials
