@@ -1,6 +1,25 @@
 import torch
 from transformers import AutoTokenizer, AutoModel
+import mysql.connector
 from chromadb import EmbeddingFunction, Documents, Embeddings
+
+def init_db_client(user, pswd, db=None):
+    if db:
+        conn = mysql.connector.connect(
+            host="localhost",
+            user=user,
+            password=pswd,
+            database=db
+        )
+        return conn, conn.cursor()
+    else:
+         conn = mysql.connector.connect(
+              host="localhost",
+              user=user,
+              password=pswd,
+         )
+         return conn, conn.cursor()
+
 
 class PubMedBertBaseEmbeddings(EmbeddingFunction):
     def __call__(self, input: Documents) -> Embeddings:
