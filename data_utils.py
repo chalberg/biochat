@@ -1,5 +1,6 @@
 import torch
 from transformers import AutoTokenizer, AutoModel
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 import mysql.connector
 from chromadb import EmbeddingFunction, Documents, Embeddings
 
@@ -19,6 +20,23 @@ def init_db_client(user, pswd, db=None):
               password=pswd,
          )
          return conn, conn.cursor()
+
+def split_clinicaltrials_data(embedding_model, data):
+        # data = (id, var1, var2, ..., varn)
+        if embedding_model == "neuml/pubmedbert-base-embeddings":
+            chunk_size = 512
+        splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, chunk_overlap=0)
+
+        combined = "".join(data[1:]) # combine values into single string
+
+        docs, ids = [], []
+        id = data[0]
+        texts = splitter.split_text(combined)
+        for i, t in enumerate(texts):
+            ids.append(id+"_"+str(i))
+            docs.append(t)
+        return ids, docs
+
 
 
 class PubMedBertBaseEmbeddings(EmbeddingFunction):
