@@ -8,3 +8,4 @@ sacremoses
 chromadb
 pytrials
 mysql-connector-python
+bs4

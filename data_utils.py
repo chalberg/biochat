@@ -3,6 +3,8 @@ from transformers import AutoTokenizer, AutoModel
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import mysql.connector
 from chromadb import EmbeddingFunction, Documents, Embeddings
+from bs4 import BeautifulSoup
+import requests
 
 def init_db_client(user, pswd, db=None):
     if db:
@@ -37,7 +39,60 @@ def split_clinicaltrials_data(embedding_model, data):
             docs.append(t)
         return ids, docs
 
+def scrape_huntsman_publications():
+    data_path = 'D:\projects\biochat\pubmed\publications'
 
+    # get lab names
+    labs = ['ayer', 'beckerle', 'bernard', 'cairns-lab', 'camp', 'chandrasekharan',
+            'cheshier', 'curtin', 'doherty', 'edgar', 'evason', 'gaffney', 'gertz',
+            'graves', 'grossman', 'hashibe', 'holmen', 'hu-lieskovan', 'jensen-lab',
+            'johnson', 'kb-jones-lab', 'kaphingst', 'kepka', 'kinsey', 'kirchhoff',
+            'mcmahon', 'mendoza', 'mooney', 'neklason', 'onega', 'schiffman', 'snyder',
+            'spike', 'stewart', 'suneja', 'tavtigian', 'ullman', 'vanbrocklin', 'varley',
+            'young', 'zhang']
+
+    unique_urls = {'anderson': 'https://www.joshandersenlab.com/publications',
+                   'basham': 'https://www.bashamlab.com/publications',
+                   'buckley': 'https://buckleylab.org/',
+                   'allie-grossmann': 'https://medicine.utah.edu/pathology/research-labs/allie-grossmann',
+                   'torres': 'https://www.judsontorreslab.org/publications',
+                   'myers': 'http://www.myerslab.org/publications.html',
+                   'tan': 'http://tanlab.org/papers.html',
+                   'welm-a': 'https://pubmed.ncbi.nlm.nih.gov/?term=Welm-A&sort=date&sort_order=asc&format=pubmed&size=100',
+                   'welm-b': 'https://pubmed.ncbi.nlm.nih.gov/?term=Welm-B&sort=date&format=pubmed&size=100',
+                   'wu': 'https://uofuhealth.utah.edu/huntsman/labs/wu/publications',
+                   'ulrich' : 'https://uofuhealth.utah.edu/huntsman/labs/ulrich/publications'}
+
+    # scrape publications from standard page format
+    for lab in labs:
+        url = "https://uofuhealth.utah.edu/huntsman/labs/{}/publications".format(lab)
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        div = soup.find('div', class_='coh-wysiwyg')
+        tags = div.find_all('p')
+        count = 1
+        
+        for tag in tags:
+            if lab in {'onega', 'young', 'mcmahon', 'edgar'}:
+                text = tag.text
+                is_header = (text.split()[0] in {'View', 'Current', 'Full', 'If', 'These'}) or ((text.split()[0] + text.split()[1]) in {'Toview', 'Labmembers'})
+                if not is_header:
+                    count += 1
+
+            elif tag.find('a'):
+                text = tag.text
+                is_header = (text.split()[0] in {'View', 'Current', 'Full', 'If', 'These'}) or ((text.split()[0] + text.split()[1]) in {'Toview', 'Labmembers'})
+                if not is_header:
+                    count += 1
+
+    for lab in unique_urls.keys():
+        url = unique_urls[lab]
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # handle separately for each page
+         
+     
 
 class PubMedBertBaseEmbeddings(EmbeddingFunction):
     def __call__(self, input: Documents) -> Embeddings:
