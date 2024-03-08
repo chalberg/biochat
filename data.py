@@ -176,7 +176,6 @@ def update_db(test, data, embedding_model, db_user, db_pswd):
         cursor.close()
         conn.close()
 
-
 def get_clinicaltrials_data(search_exp, test):
     if test:
         # load sample NCTIds
@@ -212,7 +211,6 @@ def get_clinicaltrials_data(search_exp, test):
         return data
         
             
-
 if __name__=="__main__":
     parser = ArgumentParser()
 
@@ -223,6 +221,7 @@ if __name__=="__main__":
     parser.add_argument('--db_pswd', help="Pasword for the MySQL database storing context data")
     parser.add_argument('--db_user', default="root", help="User for the MySQL database for storing context data")
     parser.add_argument('--search', default=None, help='Search term for querying ClinicalTrials.gov')
+    parser.add_argument('--scrape_papers',  action='store_true')
     args = parser.parse_args()
 
     conn, cursor = init_db_client(user=args.db_user, pswd=args.db_pswd, db="biochat")
@@ -240,3 +239,6 @@ if __name__=="__main__":
     if args.update_db:
         print("Updating databases ...")
         update_db(test=args.test, data=data, embedding_model=args.embedding_model, db_user=args.db_user, db_pswd=args.db_pswd)
+
+    if args.scrape_papers:
+        scrape_huntsman_publications()

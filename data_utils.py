@@ -80,7 +80,7 @@ def scrape_huntsman_publications():
                 text = tag.text.strip()
                 is_header = (text.split()[0] in {'View', 'Current', 'Full', 'If', 'These'}) or ((text.split()[0] + text.split()[1]) in {'Toview', 'Labmembers'})
 
-            elif lab in {'ayer'}: # duplicate titles
+            elif lab == 'ayer': # handle duplicate titles
                 content = tag.text.strip()
                 is_header = (content.split()[0] in {'View', 'Current', 'Full', 'If', 'These'}) or ((content.split()[0] + content.split()[1]) in {'Toview', 'Labmembers'})
                 if not is_header:
@@ -98,7 +98,7 @@ def scrape_huntsman_publications():
             for t in texts:
                 file.write(str(t) + "\n")
 
-    for lab in unique_urls.keys():
+    for lab in tqdm(unique_urls.keys()):
         url = unique_urls[lab]
         response = requests.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -116,11 +116,36 @@ def scrape_huntsman_publications():
             if group: # add last group
                 texts.append(". ".join(group))
 
-            # save to .txt file
             path = os.path.join(data_path, "anderson.txt")
             with open(path, 'w', encoding='utf-8') as file:
                 for text in texts:
                     file.write(str(text) + "\n")
+        
+        if lab == "basham":
+            div = soup.find('div', id='Containerc24vq')
+            texts = []
+            for p in div.find_all('p', class_='font_7'):
+                text = p.text.strip()
+                texts.append(text)
+            
+            path = os.path.join(data_path, "basham.txt")
+            with open(path, 'w', encoding='utf-8') as file:
+                for text in texts:
+                    file.write(str(text) + "\n")
+
+        if lab == "buckley":
+            div = soup.find_all('div', class_='col-sm-10 col-sm-offset-1')[1]
+            texts = []
+            for p in div.find_all('p')[:-1]:
+                if p.text.strip() != "(Selected Publications Since 2010)":
+                    text = p.text.strip()
+                    texts.append(text.lstrip('-\t').strip())
+            path = os.path.join(data_path, "buckley.txt")
+            with open(path, 'w', encoding='utf-8') as file:
+                for text in texts:
+                    file.write(str(text) + "\n")
+                
+
                 
 
 class PubMedBertBaseEmbeddings(EmbeddingFunction):
