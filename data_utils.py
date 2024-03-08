@@ -5,6 +5,7 @@ import mysql.connector
 from chromadb import EmbeddingFunction, Documents, Embeddings
 from bs4 import BeautifulSoup
 import requests
+import os
 
 def init_db_client(user, pswd, db=None):
     if db:
@@ -40,7 +41,7 @@ def split_clinicaltrials_data(embedding_model, data):
         return ids, docs
 
 def scrape_huntsman_publications():
-    data_path = 'D:\projects\biochat\pubmed\publications'
+    data_path = "D:\\projects\\biochat\\pubmed\\publications"
 
     # get lab names
     labs = ['ayer', 'beckerle', 'bernard', 'cairns-lab', 'camp', 'chandrasekharan',
@@ -71,26 +72,48 @@ def scrape_huntsman_publications():
         div = soup.find('div', class_='coh-wysiwyg')
         tags = div.find_all('p')
         count = 1
-        
+
         for tag in tags:
             if lab in {'onega', 'young', 'mcmahon', 'edgar'}:
                 text = tag.text
                 is_header = (text.split()[0] in {'View', 'Current', 'Full', 'If', 'These'}) or ((text.split()[0] + text.split()[1]) in {'Toview', 'Labmembers'})
-                if not is_header:
-                    count += 1
 
             elif tag.find('a'):
                 text = tag.text
                 is_header = (text.split()[0] in {'View', 'Current', 'Full', 'If', 'These'}) or ((text.split()[0] + text.split()[1]) in {'Toview', 'Labmembers'})
-                if not is_header:
-                    count += 1
+            
+            if not is_header:
+                id = lab+"_"+str(count)
+                path = os.path.join(data_path, "{}.txt".format(id))
+                with open(path, "w", encoding='utf-8') as file:
+                    file.write(text)
+                count += 1
 
     for lab in unique_urls.keys():
         url = unique_urls[lab]
         response = requests.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # handle separately for each page
+        if lab == "anderson":
+            div = soup.find_all('div', class_="sqs-html-content")[1]
+            texts = []
+            group = []
+            for p in div.find_all('p'):
+                if p.text.strip():
+                    group.append(p.text.strip())
+                elif group: # if p is empty and group is non-empty
+                    texts.append(". ".join(group))
+                    group = []
+            if group: # add last group
+                texts.append(". ".join(group))
+            
+            # save to .txt file
+            path = os.path.join(data_path, "anderson.txt")
+            with open(path, 'w', encoding='utf-8') as file:
+                for text in texts:
+                    file.write(str(text) + "\n")
+                
+                
          
      
 
