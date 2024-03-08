@@ -9,15 +9,15 @@ def main():
     st.header("biochat")
     st.sidebar.header("Instructions")
     st.sidebar.info(
-        '''This is a web application that allows you to interact with an 
-        EHR knowledge graph, ask biomedical questions or general questions. 
+        '''
+        This is a web application that allows you to interact with a chatbot that answers biomedical questions. 
         '''
         )
     st.sidebar.info('''Enter a query in the text box and press enter
         to receive a response''')
     
     st.sidebar.info('''The app is under active development. 
-        There are several issues that needs to be fix''')
+        There are several issues that need to be fixed''')
     
     if 'generated' not in st.session_state:
         st.session_state['generated'] = []

@@ -6,6 +6,7 @@ from chromadb import EmbeddingFunction, Documents, Embeddings
 from bs4 import BeautifulSoup
 import requests
 import os
+from tqdm import tqdm
 
 def init_db_client(user, pswd, db=None):
     if db:
@@ -65,29 +66,37 @@ def scrape_huntsman_publications():
                    'ulrich' : 'https://uofuhealth.utah.edu/huntsman/labs/ulrich/publications'}
 
     # scrape publications from standard page format
-    for lab in labs:
+    for lab in tqdm(labs):
         url = "https://uofuhealth.utah.edu/huntsman/labs/{}/publications".format(lab)
+
         response = requests.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
         div = soup.find('div', class_='coh-wysiwyg')
-        tags = div.find_all('p')
-        count = 1
 
-        for tag in tags:
-            if lab in {'onega', 'young', 'mcmahon', 'edgar'}:
-                text = tag.text
+        texts = []
+        title = False
+        for tag in div.find_all('p'):
+            if lab in {'onega', 'young', 'mcmahon', 'edgar', 'johnson'}: # plain text
+                text = tag.text.strip()
                 is_header = (text.split()[0] in {'View', 'Current', 'Full', 'If', 'These'}) or ((text.split()[0] + text.split()[1]) in {'Toview', 'Labmembers'})
 
-            elif tag.find('a'):
-                text = tag.text
+            elif lab in {'ayer'}: # duplicate titles
+                content = tag.text.strip()
+                is_header = (content.split()[0] in {'View', 'Current', 'Full', 'If', 'These'}) or ((content.split()[0] + content.split()[1]) in {'Toview', 'Labmembers'})
+                if not is_header:
+                    text = content.split('\n')[1]
+
+            elif tag.find('a'): # standard format
+                text = tag.text.strip()
                 is_header = (text.split()[0] in {'View', 'Current', 'Full', 'If', 'These'}) or ((text.split()[0] + text.split()[1]) in {'Toview', 'Labmembers'})
             
             if not is_header:
-                id = lab+"_"+str(count)
-                path = os.path.join(data_path, "{}.txt".format(id))
-                with open(path, "w", encoding='utf-8') as file:
-                    file.write(text)
-                count += 1
+                texts.append(text.replace("\n", ""))
+
+        path = os.path.join(data_path, "{}.txt".format(lab.replace("-", "_")))
+        with open(path, "w", encoding='utf-8') as file:
+            for t in texts:
+                file.write(str(t) + "\n")
 
     for lab in unique_urls.keys():
         url = unique_urls[lab]
@@ -106,16 +115,13 @@ def scrape_huntsman_publications():
                     group = []
             if group: # add last group
                 texts.append(". ".join(group))
-            
+
             # save to .txt file
             path = os.path.join(data_path, "anderson.txt")
             with open(path, 'w', encoding='utf-8') as file:
                 for text in texts:
                     file.write(str(text) + "\n")
                 
-                
-         
-     
 
 class PubMedBertBaseEmbeddings(EmbeddingFunction):
     def __call__(self, input: Documents) -> Embeddings:
