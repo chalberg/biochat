@@ -1,8 +1,9 @@
 import streamlit as st
-from streamlit_chat import message
-from models import get_prompt, get_response
+from argparse import ArgumentParser
+from models import get_prompt, get_response, init_model
 
-def main():
+def main(data_path, token):
+    # page configuration
     st.set_page_config(
         page_title="biochat"
     )
@@ -10,33 +11,54 @@ def main():
     st.sidebar.header("Instructions")
     st.sidebar.info(
         '''
-        This is a web application that allows you to interact with a chatbot that answers biomedical questions. 
-        '''
-        )
-    st.sidebar.info('''Enter a query in the text box and press enter
+        This is a web app which allows you to interact with a chatbot specializing in biomedical information. 
+        ''')
+    st.sidebar.info('''First select a bot, then type a query in the text box and press enter
         to receive a response''')
     
-    st.sidebar.info('''The app is under active development. 
-        There are several issues that need to be fixed''')
+    # bot selection
+    st.sidebar.header("Bot Selection")
+    name = st.sidebar.selectbox("Which bot would you like to use?",
+                         ('General', 'Biomedical'))
+    st.sidebar.info('''
+                    General: A general chatbot for any kind of text prompt. Note the outputs of all models are text only.
+                    ''')
+    st.sidebar.info('''
+                    Biomedical: A chatbot trained specifically for answering biomedical questions.
+                    This model can better understand scientific language and terms as well as pull information from select papers.
+                    ''')
     
-    if 'generated' not in st.session_state:
-        st.session_state['generated'] = []
+    # initialize model
+    generator = init_model(name=name, data_path=data_path, token=token)
+
+    # display chat history
+    # TO DO: handle different histories for different bots
+    if "history" not in st.session_state:
+        st.session_state.history = [] # list of dicts ('role': 'content')
     
-    if 'past' not in st.session_state:
-        st.session_state['past'] = []
-        
+    for message in st.session_state.history:
+        with st.chat_message(message['role']):
+            st.markdown(message['content'])
+
+    # get input
+    prompt = get_prompt()
+    if prompt:
+        with st.chat_message('user'):
+            st.markdown(prompt)
+        st.session_state.history.append({'role':'user', 'content': prompt}) # add to history
     
-    user_input = get_prompt()
+        # generate response
+        response = get_response(prompt, generator)
+        with st.chat_message('assistant'):
+            st.markdown(response)
+        st.session_state.history.append({'role': 'assistant', 'content': response})
+
     
-    if user_input:
-        output = get_response(user_input)
-        st.session_state.past.append(user_input)
-        st.session_state.generated.append(output)
-    
-    if st.session_state['generated']:
-        for i in range(len(st.session_state['generated'])-1, -1, -1):
-            message(st.session_state["generated"][i], key=str(i))
-            message(st.session_state['past'][i], is_user=True, key=str(i) + '_user')
     
 if __name__=="__main__":
-    main()
+    parser = ArgumentParser()
+    parser.add_argument('--data_path', default='D:\\projects\\biochat\\model_caches')
+    parser.add_argument('--huggingface_api_token', help='API token for access to models from HuggingFace')
+    args = parser.parse_args()
+
+    main(data_path=args.data_path, token=args.huggingface_api_token)
