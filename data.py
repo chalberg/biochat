@@ -1,5 +1,4 @@
 import chromadb
-import mysql.connector
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pytrials.client import ClinicalTrials
 from argparse import ArgumentParser

@@ -1,6 +1,6 @@
 import streamlit as st
 from argparse import ArgumentParser
-from models import get_prompt, get_response, init_model
+from models import *
 
 def main(data_path, token):
     # page configuration
@@ -48,7 +48,12 @@ def main(data_path, token):
         st.session_state.history.append({'role':'user', 'content': prompt}) # add to history
     
         # generate response
-        response = get_response(prompt, generator)
+        if name=="Biomedical":
+            db_path = "D:projects/biochat/clinical_trials/data/db"
+            client = chromadb.PersistentClient(path=db_path)
+            response = get_rag_response(prompt, generator, client)
+        else:
+            response = get_response(prompt, generator)
         with st.chat_message('assistant'):
             st.markdown(response)
         st.session_state.history.append({'role': 'assistant', 'content': response})
